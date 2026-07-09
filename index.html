@@ -43,7 +43,8 @@ body::before{
 
 /* ═══════════════════════ HELFER ═══════════════════════ */
 .wrap{ width:100%; max-width:var(--maxw); margin:0 auto; padding:0 28px; position:relative; z-index:1; }
-.eyebrow{ font-family:var(--script); font-size:clamp(28px,5vw,46px); color:var(--sage-deep); line-height:1; }
+.eyebrow{ font-family:var(--script); font-size:clamp(28px,5vw,46px); color:var(--sage-deep); line-height:1.15; max-width:100%; word-break:break-word; overflow-wrap:break-word; }
+.invite-name{ font-family:var(--script); font-size:clamp(24px,6vw,42px); color:var(--ink); line-height:1.15; margin-top:2px; max-width:100%; word-break:break-word; overflow-wrap:break-word; }
 .rule{ width:1px; height:64px; background:linear-gradient(var(--sage),transparent); margin:0 auto; }
 .rule--up{ background:linear-gradient(transparent,var(--sage)); }
 .section-label{ font-family:var(--sans); font-weight:400; letter-spacing:.42em; text-transform:uppercase; font-size:12px; color:var(--brass); }
@@ -181,8 +182,17 @@ body::before{
 .form-note.err{ color:#a1442f; }
 .thanks{ display:none; text-align:center; }
 .thanks.show{ display:block; animation:soft-in .8s ease forwards; }
+.thanks-check{
+  width:56px; height:56px; margin:0 auto 18px; border-radius:50%;
+  border:1.5px solid var(--sage-deep); color:var(--sage-deep);
+  display:flex; align-items:center; justify-content:center; font-size:26px;
+  opacity:0; transform:scale(.6); animation:check-pop .6s cubic-bezier(.2,.9,.3,1.3) .1s forwards;
+}
+@keyframes check-pop{ to{ opacity:1; transform:scale(1); } }
 .thanks .mark{ font-family:var(--script); font-size:clamp(40px,8vw,64px); color:var(--sage-deep); line-height:1; }
+.thanks-confirm{ font-family:var(--sans); font-weight:400; letter-spacing:.08em; font-size:clamp(14px,2.6vw,16px); color:var(--ink); margin-top:14px; }
 .thanks p{ font-family:var(--serif); font-style:italic; font-size:clamp(20px,4vw,28px); color:var(--ink-soft); margin-top:10px; }
+@media (prefers-reduced-motion:reduce){ .thanks-check{ opacity:1 !important; transform:scale(1) !important; } }
 .hidden-until-choice{ display:none; }
 .hidden-until-choice.show{ display:block; }
 
@@ -348,6 +358,7 @@ body::before{
   <section class="section" style="padding-bottom:0;">
     <div class="wrap reveal">
       <p class="eyebrow" id="inviteGreeting">Schön, dass ihr dabei seid</p>
+      <p class="invite-name" id="inviteName"></p>
       <p class="lead" id="inviteNote"></p>
     </div>
   </section>
@@ -399,8 +410,10 @@ body::before{
     </form>
 
     <div class="thanks" id="thanks">
+      <div class="thanks-check">✓</div>
       <div class="mark">Dankeschön</div>
-      <p id="thanksMsg">Wir haben eure Rückmeldung erhalten.</p>
+      <p id="thanksConfirm" class="thanks-confirm">Wir haben eure Rückmeldung erhalten.</p>
+      <p id="thanksMsg"></p>
     </div>
   </div>
 </section>
@@ -782,9 +795,8 @@ function buildInvite(g){
   const party = g.type === "party";
   const solo = (g.persons || (g.members||[]).length || 1) === 1;
 
-  $("inviteGreeting").textContent = solo
-    ? `Schön, dass du dabei bist — ${g.label}`
-    : `Schön, dass ihr dabei seid — ${g.label}`;
+  $("inviteGreeting").textContent = solo ? "Schön, dass du dabei bist" : "Schön, dass ihr dabei seid";
+  $("inviteName").textContent = g.label;
 
   const bodyText = party
     ? (solo ? CONFIG.textPartySingular : CONFIG.textParty)
@@ -1000,9 +1012,14 @@ form.addEventListener("submit", async e => {
     await withTimeout(push(ref(db, "rsvp"), entry), 8000);
     form.style.display = "none";
     $("thanks").classList.add("show");
+    const solo = selectedGuest && (selectedGuest.persons || (selectedGuest.members||[]).length || 1) === 1;
+    $("thanksConfirm").textContent = solo
+      ? "Wir haben deine Rückmeldung erhalten."
+      : "Wir haben eure Rückmeldung erhalten.";
     $("thanksMsg").textContent = attending === "ja"
-      ? "Wunderbar — wir freuen uns riesig auf euch!"
-      : "Schade, dass ihr nicht dabei sein könnt. Danke für die Rückmeldung.";
+      ? (solo ? "Wunderbar — wir freuen uns riesig auf dich!" : "Wunderbar — wir freuen uns riesig auf euch!")
+      : (solo ? "Schade, dass du nicht dabei sein kannst. Danke für die Rückmeldung."
+              : "Schade, dass ihr nicht dabei sein könnt. Danke für die Rückmeldung.");
     if (attending === "ja"){
       const post = $("postRsvp");
       post.hidden = false;
