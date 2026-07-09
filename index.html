@@ -284,42 +284,6 @@ body::before{
   .petals{ display:none; }
   .crest,.hero .eyebrow,.names .nm,.names .amp,.hero .date-line,.scroll-cue{ opacity:1 !important; transform:none !important; }
 }
-/* ═══════════════════════ WACHSSIEGEL-SCRATCH-OVERLAY ═══════════════════════ */
-#scratchOverlay{
-  position:fixed; inset:0; z-index:999;
-  background:
-    radial-gradient(120% 90% at 50% 0%, var(--paper) 40%, var(--paper-deep) 100%);
-  display:flex; align-items:center; justify-content:center;
-  transition:opacity .9s ease;
-}
-#scratchOverlay.fading{ opacity:0; pointer-events:none; }
-#scratchOverlay.gone{ display:none; }
-.scratch-card{ display:flex; flex-direction:column; align-items:center; gap:26px; padding:24px; }
-.scratch-hint{
-  display:flex; align-items:center; gap:8px; font-family:var(--sans); font-weight:400;
-  letter-spacing:.24em; text-transform:uppercase; font-size:12px; color:var(--sage-deep);
-  animation:hint-pulse 1.8s ease-in-out infinite;
-}
-.scratch-hint-icon{ display:inline-block; animation:hint-spin 3.2s linear infinite; color:var(--brass); }
-@keyframes hint-pulse{ 0%,100%{ opacity:.55; } 50%{ opacity:1; } }
-@keyframes hint-spin{ to{ transform:rotate(360deg); } }
-.scratch-stage{ position:relative; width:min(66vw,240px); aspect-ratio:1; }
-.scratch-seal-under{ position:absolute; inset:0; }
-.scratch-seal-under svg{ width:100%; height:100%; }
-#scratchCanvas{
-  position:absolute; inset:0; width:100%; height:100%; border-radius:50%;
-  cursor:pointer; touch-action:none;
-  box-shadow:0 8px 28px rgba(43,50,38,.18);
-}
-.scratch-skip{
-  background:none; border:none; color:var(--sage); opacity:.55;
-  font-family:var(--sans); font-size:11px; letter-spacing:.2em; text-transform:uppercase;
-  cursor:pointer; padding:6px;
-}
-.scratch-skip:hover{ opacity:1; }
-@media (prefers-reduced-motion:reduce){
-  .scratch-hint, .scratch-hint-icon{ animation:none; }
-}
 
 @media print{
   .scroll-cue,.petals,.btn,.rsvp .form,.foot .admin-link{ display:none; }
@@ -328,21 +292,6 @@ body::before{
 </style>
 </head>
 <body>
-
-<!-- ══════════════════ WACHSSIEGEL ZUM FREIRUBBELN ══════════════════ -->
-<div id="scratchOverlay">
-  <div class="scratch-card">
-    <div class="scratch-hint" id="scratchHint">
-      <span class="scratch-hint-icon">✦</span>
-      Rubbelt das Siegel frei
-    </div>
-    <div class="scratch-stage">
-      <div class="scratch-seal-under" id="scratchSealUnder"></div>
-      <canvas id="scratchCanvas"></canvas>
-    </div>
-    <button type="button" id="scratchSkip" class="scratch-skip">Direkt öffnen</button>
-  </div>
-</div>
 
 <!-- ══════════════════ HERO ══════════════════ -->
 <header class="hero">
@@ -774,7 +723,7 @@ function sealSVG(sfx){
   const [iA, iB] = CONFIG.initialen.split("&").map(s => s.trim());
   const initA = iA || CONFIG.braut[0], initB = iB || CONFIG.braeutigam[0];
   const dt = (CONFIG.datumText || "").toUpperCase();
-  return `<svg class="crest" viewBox="0 0 220 220" role="img" aria-label="Monogramm ${initA} und ${initB}">
+  return `<svg class="crest" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Monogramm ${initA} und ${initB}">
     <defs>
       <path id="at${sfx}" d="M50 108 A58 58 0 0 1 170 108" fill="none"/>
       <path id="ab${sfx}" d="M52 116 A56 56 0 0 0 168 116" fill="none"/>
@@ -792,7 +741,6 @@ function sealSVG(sfx){
 function renderConfigTexts(){
   $("heroCrest").innerHTML = sealSVG("H");
   $("footCrest").innerHTML = sealSVG("F");
-  const su = $("scratchSealUnder"); if (su) su.innerHTML = sealSVG("S");
   const titleText = `Wir heiraten · ${CONFIG.braut} & ${CONFIG.braeutigam}`;
   document.title = titleText;
   const setMeta = (selector, value) => { const el = document.querySelector(selector); if (el) el.setAttribute("content", value); };
@@ -805,134 +753,7 @@ function renderConfigTexts(){
   $("hashtag").textContent = CONFIG.hashtag;
 }
 renderConfigTexts();
-initScratchSeal();
 
-/* ═══════════════════════ WACHSSIEGEL ZUM FREIRUBBELN ═══════════════════════
-   Digitales Scratch-Card: eine "Wachsschicht" liegt über dem Monogramm.
-   Wird sie zu ~45% weggerubbelt (Maus oder Finger), blendet sich das
-   gesamte Overlay weg und gibt die Einladung frei. Läuft einmal pro
-   Browser-Tab (sessionStorage) — bei jedem neuen Öffnen des Links wieder. */
-function initScratchSeal(){
-  const overlay = $("scratchOverlay");
-  if (!overlay) return;
-
-  // Bereits in dieser Sitzung geöffnet? Dann Overlay gar nicht erst zeigen.
-  if (sessionStorage.getItem("scratchDone") === "1"){
-    overlay.classList.add("gone");
-    return;
-  }
-  document.body.style.overflow = "hidden";
-
-  const canvas = $("scratchCanvas");
-  const ctx = canvas.getContext("2d");
-  const hint = $("scratchHint");
-  const skipBtn = $("scratchSkip");
-  let size = 0, revealed = false, hintHidden = false;
-
-  function sizeCanvas(){
-    const rect = canvas.getBoundingClientRect();
-    size = Math.round(rect.width);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = size * dpr; canvas.height = size * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawWax();
-  }
-
-  function drawWax(){
-    ctx.globalCompositeOperation = "source-over";
-    ctx.clearRect(0, 0, size, size);
-    // runde Wachs-Fläche mit leichtem Verlauf, angelehnt an die Sagepalette
-    const g = ctx.createRadialGradient(size*0.35,size*0.32,size*0.05, size*0.5,size*0.5,size*0.68);
-    g.addColorStop(0, "#93865A");
-    g.addColorStop(.55, "#7E8C6A");
-    g.addColorStop(1, "#5E6B4C");
-    ctx.beginPath();
-    ctx.arc(size/2, size/2, size/2 - 1, 0, Math.PI*2);
-    ctx.fillStyle = g;
-    ctx.fill();
-    // dezente Textur
-    ctx.globalAlpha = .12;
-    for (let i=0;i<26;i++){
-      ctx.beginPath();
-      const a = Math.random()*Math.PI*2, r = Math.random()*size*0.42;
-      ctx.arc(size/2 + Math.cos(a)*r, size/2 + Math.sin(a)*r, size*0.03 + Math.random()*size*0.03, 0, Math.PI*2);
-      ctx.fillStyle = "#F5F1E8";
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    // Hinweistext
-    ctx.fillStyle = "rgba(245,241,232,.92)";
-    ctx.font = `${Math.round(size*0.052)}px 'Jost', sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.save();
-    ctx.translate(size/2, size/2 - size*0.02);
-    ctx.fillText("HIER RUBBELN", 0, 0);
-    ctx.restore();
-  }
-
-  function scratchAt(x, y){
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.beginPath();
-    ctx.arc(x, y, size*0.11, 0, Math.PI*2);
-    ctx.fill();
-  }
-
-  function checkProgress(){
-    if (revealed) return;
-    if (!hintHidden){ hint.style.opacity = "0"; hintHidden = true; }
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const step = 6; // Sampling-Raster, aus Performancegründen nicht jedes Pixel prüfen
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let total = 0, clear = 0;
-    for (let y=0; y<canvas.height; y+=step){
-      for (let x=0; x<canvas.width; x+=step){
-        // nur innerhalb des Kreises zählen
-        const cx = x/dpr - size/2, cy = y/dpr - size/2;
-        if (cx*cx + cy*cy > (size/2)*(size/2)) continue;
-        total++;
-        if (data[(y*canvas.width + x)*4 + 3] < 60) clear++;
-      }
-    }
-    if (total > 0 && clear/total > 0.45) revealSeal();
-  }
-
-  function revealSeal(){
-    if (revealed) return;
-    revealed = true;
-    canvas.style.transition = "opacity .6s ease";
-    canvas.style.opacity = "0";
-    setTimeout(finishReveal, 550);
-  }
-
-  function finishReveal(){
-    sessionStorage.setItem("scratchDone", "1");
-    overlay.classList.add("fading");
-    document.body.style.overflow = "";
-    setTimeout(() => overlay.classList.add("gone"), 950);
-  }
-
-  let dragging = false;
-  function pos(e){
-    const rect = canvas.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  }
-  canvas.addEventListener("pointerdown", e => { dragging = true; const p = pos(e); scratchAt(p.x,p.y); checkProgress(); });
-  canvas.addEventListener("pointermove", e => { if (!dragging) return; const p = pos(e); scratchAt(p.x,p.y); checkProgress(); });
-  window.addEventListener("pointerup", () => { dragging = false; });
-  canvas.addEventListener("pointerdown", e => canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId));
-
-  skipBtn.addEventListener("click", () => { revealed = true; finishReveal(); });
-
-  // Für Reduced-Motion / Tastatur: Enter/Space auf dem Canvas öffnet direkt
-  canvas.setAttribute("tabindex", "0");
-  canvas.setAttribute("role", "button");
-  canvas.setAttribute("aria-label", "Wachssiegel freirubbeln, um die Einladung zu öffnen");
-  canvas.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); finishReveal(); } });
-
-  window.addEventListener("resize", sizeCanvas, { passive:true });
-  requestAnimationFrame(sizeCanvas);
-}
 
 /* ═══════════════════════ LIVE-KONFIGURATION AUS FIREBASE ═══════════════════════
    Fällt zurück auf die CONFIG-Werte oben, solange noch nichts gespeichert wurde. */
