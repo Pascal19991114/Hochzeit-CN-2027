@@ -359,7 +359,6 @@ body::before{
     <div class="wrap reveal">
       <p class="eyebrow" id="inviteGreeting">Schön, dass ihr dabei seid</p>
       <p class="invite-name" id="inviteName"></p>
-      <p class="lead" id="inviteNote"></p>
     </div>
   </section>
 
@@ -420,6 +419,12 @@ body::before{
 
   <!-- Der Tag + Kalender + Ablauf — erscheinen erst NACH der Rückmeldung -->
   <div id="postRsvp" hidden>
+    <section class="section" style="padding-bottom:0;">
+      <div class="wrap reveal">
+        <p class="lead" id="postNote"></p>
+      </div>
+    </section>
+
     <section class="section">
       <div class="wrap reveal">
         <div class="section-label">Der Tag</div>
@@ -801,7 +806,7 @@ function buildInvite(g){
   const bodyText = party
     ? (solo ? CONFIG.textPartySingular : CONFIG.textParty)
     : (solo ? CONFIG.textVollSingular  : CONFIG.textVoll);
-  $("inviteNote").innerHTML = bodyText
+  $("postNote").innerHTML = bodyText
     + `<br><span class="type-badge">${party ? "Einladung zur Party" : "Einladung zum ganzen Tag"}</span>`;
 
   // RSVP-Formular an Einzelperson/Mehrere anpassen
