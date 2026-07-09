@@ -207,6 +207,19 @@ body::before{
 .admin th{ font-family:var(--sans); font-weight:400; letter-spacing:.14em; text-transform:uppercase; font-size:11px; color:var(--blush); }
 .admin .close{ position:absolute; top:20px; right:24px; background:none; border:1px solid var(--paper); color:var(--paper); padding:8px 14px; cursor:pointer; letter-spacing:.2em; font-size:11px; text-transform:uppercase; }
 .admin .yes{ color:#c9dcae; } .admin .no{ color:#e0b0a0; }
+.row-actions{ display:flex; gap:8px; white-space:nowrap; }
+.row-actions button{
+  background:none; border:1px solid rgba(245,241,232,.35); color:var(--paper);
+  padding:6px 10px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+}
+.row-actions button:hover{ background:rgba(245,241,232,.1); }
+.row-actions .del{ border-color:rgba(224,176,160,.6); color:#e0b0a0; }
+.row-actions .del:hover{ background:rgba(224,176,160,.15); }
+.row-actions .save{ border-color:#c9dcae; color:#c9dcae; }
+.admin td input, .admin td select{
+  background:rgba(245,241,232,.08); border:1px solid rgba(245,241,232,.3); color:var(--paper);
+  padding:6px 8px; font-family:var(--sans); font-size:13px; width:100%; min-width:70px;
+}
 
 /* Editor (Inhalte bearbeiten) */
 .editor-hint{ font-size:13px; color:var(--blush); margin:-6px 0 22px; line-height:1.6; }
@@ -339,42 +352,18 @@ body::before{
     </div>
   </section>
 
-  <!-- Details (je nach Typ) -->
-  <section class="section">
-    <div class="wrap reveal">
-      <div class="section-label">Der Tag</div>
-      <div class="cards" id="cards"></div>
-      <div class="cal-buttons" id="calButtons">
-        <a id="gcalBtn" class="cal-btn" target="_blank" rel="noopener">
-          <span class="cal-ico">📅</span> Zu Google Kalender
-        </a>
-        <a id="icsBtn" class="cal-btn cal-btn--outline" download="Hochzeit.ics">
-          <span class="cal-ico">🍎</span> Zu Apple / Outlook Kalender
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Ablauf (je nach Typ) -->
-  <section class="section" style="padding-top:0;">
-    <div class="wrap reveal">
-      <div class="section-label">Ablauf</div>
-      <div class="timeline" id="timeline"></div>
-    </div>
-  </section>
-
 <!-- ══════════════════ RSVP ══════════════════ -->
 <section class="section rsvp" id="rsvp">
   <div class="wrap reveal">
     <div class="rule rule--up"></div>
     <p class="eyebrow" style="margin-top:26px;">Nur noch ein paar Details</p>
-    <p class="lead">Wir freuen uns, dass ihr dabei seid — tragt hier einfach die letzten Infos für die Planung ein.</p>
+    <p class="lead" id="rsvpLead">Wir freuen uns, dass ihr dabei seid — tragt hier einfach die letzten Infos für die Planung ein.</p>
 
     <form class="form" id="rsvpForm" autocomplete="off" novalidate>
       <div class="field">
-        <label>Kommt ihr?</label>
+        <label id="attendLabel">Kommt ihr?</label>
         <div class="choice">
-          <label><input type="radio" name="attending" value="ja" required /><span>Wir kommen gern</span></label>
+          <label><input type="radio" name="attending" value="ja" required /><span id="choiceJa">Wir kommen gern</span></label>
           <label><input type="radio" name="attending" value="nein" /><span>Leider nicht</span></label>
         </div>
       </div>
@@ -416,7 +405,33 @@ body::before{
   </div>
 </section>
 
+  <!-- Der Tag + Kalender + Ablauf — erscheinen erst NACH der Rückmeldung -->
+  <div id="postRsvp" hidden>
+    <section class="section">
+      <div class="wrap reveal">
+        <div class="section-label">Der Tag</div>
+        <div class="cards" id="cards"></div>
+        <div class="cal-buttons" id="calButtons">
+          <a id="gcalBtn" class="cal-btn" target="_blank" rel="noopener">
+            <span class="cal-ico">📅</span> Zu Google Kalender
+          </a>
+          <a id="icsBtn" class="cal-btn cal-btn--outline" download="Hochzeit.ics">
+            <span class="cal-ico">🍎</span> Zu Apple / Outlook Kalender
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top:0;">
+      <div class="wrap reveal">
+        <div class="section-label">Ablauf</div>
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+  </div>
+
 </div><!-- /#inviteRegion -->
+
 
 <!-- ══════════════════ FOOTER ══════════════════ -->
 <footer class="foot reveal">
@@ -439,8 +454,9 @@ body::before{
       <div class="stat"><b id="stAb">0</b><span>Absagen</span></div>
       <div class="stat"><b id="stTot">0</b><span>Rückmeldungen</span></div>
     </div>
+    <button type="button" class="btn" id="exportExcel" style="max-width:260px;margin:0 auto 26px;">Als Excel exportieren</button>
     <table>
-      <thead><tr><th>Name</th><th>Antwort</th><th>Pers.</th><th>Typ</th><th>Wünsche</th><th>Nachricht</th></tr></thead>
+      <thead><tr><th>Name</th><th>Antwort</th><th>Pers.</th><th>Typ</th><th>Wünsche</th><th>Nachricht</th><th>Aktionen</th></tr></thead>
       <tbody id="adminRows"></tbody>
     </table>
   </div>
@@ -481,8 +497,10 @@ body::before{
 
     <div class="editor-section">
       <h3>Begleittexte</h3>
-      <div class="field"><label>Text für Ganztags-Gäste</label><textarea id="eTextVoll"></textarea></div>
-      <div class="field"><label>Text für Party-Gäste</label><textarea id="eTextParty"></textarea></div>
+      <div class="field"><label>Text für Ganztags-Gäste (mehrere Personen)</label><textarea id="eTextVoll"></textarea></div>
+      <div class="field"><label>Text für Ganztags-Gäste (Einzelperson)</label><textarea id="eTextVollSingular"></textarea></div>
+      <div class="field"><label>Text für Party-Gäste (mehrere Personen)</label><textarea id="eTextParty"></textarea></div>
+      <div class="field"><label>Text für Party-Gäste (Einzelperson)</label><textarea id="eTextPartySingular"></textarea></div>
     </div>
 
     <div class="editor-section">
@@ -504,9 +522,11 @@ body::before{
   </div>
 </div>
 
+<!-- Für Excel-Export der Rückmeldungen (nur im passwortgeschützten Bereich genutzt) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, set, update, remove, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -557,6 +577,9 @@ const CONFIG = {
   // Begleittexte je Einladungstyp
   textVoll:  "Ihr seid von Anfang an dabei — wir freuen uns auf einen ganzen Tag mit euch.",
   textParty: "Kommt direkt zur Party! Ab ca. 20:30 Uhr wird in der Börse gefeiert.",
+  // Varianten für Einzelpersonen (persons: 1) — Anrede in "du/dir" statt "ihr/euch"
+  textVollSingular:  "Du bist von Anfang an dabei — wir freuen uns auf einen ganzen Tag mit dir.",
+  textPartySingular: "Komm direkt zur Party! Ab ca. 20:30 Uhr wird in der Börse gefeiert.",
 
   /* ═══ GÄSTE-STAMMDATEN ═══
      Jede Zeile = ein Haushalt/eine Familie.
@@ -729,8 +752,7 @@ function renderGuestList(term){
   guestNone.classList.remove("show");
   guestListEl.innerHTML = matches.map(g => {
     const i = CONFIG.guests.indexOf(g);
-    const badge = g.type === "party" ? "nur Party" : "ganzer Tag";
-    return `<li data-i="${i}"><span>${esc(g.label)}</span><span class="meta">${badge}</span></li>`;
+    return `<li data-i="${i}"><span>${esc(g.label)}</span></li>`;
   }).join("");
   guestListEl.classList.add("show");
 }
@@ -758,9 +780,24 @@ function selectGuest(g){
 
 function buildInvite(g){
   const party = g.type === "party";
-  $("inviteGreeting").textContent = `Schön, dass ihr dabei seid — ${g.label}`;
-  $("inviteNote").innerHTML = (party ? CONFIG.textParty : CONFIG.textVoll)
+  const solo = (g.persons || (g.members||[]).length || 1) === 1;
+
+  $("inviteGreeting").textContent = solo
+    ? `Schön, dass du dabei bist — ${g.label}`
+    : `Schön, dass ihr dabei seid — ${g.label}`;
+
+  const bodyText = party
+    ? (solo ? CONFIG.textPartySingular : CONFIG.textParty)
+    : (solo ? CONFIG.textVollSingular  : CONFIG.textVoll);
+  $("inviteNote").innerHTML = bodyText
     + `<br><span class="type-badge">${party ? "Einladung zur Party" : "Einladung zum ganzen Tag"}</span>`;
+
+  // RSVP-Formular an Einzelperson/Mehrere anpassen
+  $("attendLabel").textContent = solo ? "Kommst du?" : "Kommt ihr?";
+  $("choiceJa").textContent    = solo ? "Ich komme gern" : "Wir kommen gern";
+  $("rsvpLead").textContent    = solo
+    ? "Wir freuen uns, dass du dabei bist — trag hier einfach die letzten Infos für die Planung ein."
+    : "Wir freuen uns, dass ihr dabei seid — tragt hier einfach die letzten Infos für die Planung ein.";
 
   // Karten
   let cards = "";
@@ -957,15 +994,21 @@ form.addEventListener("submit", async e => {
   };
   let techDetail = "";
   try{
-    let tries = 0; while (!authReady && !authError && tries < 30){ await new Promise(r => setTimeout(r,100)); tries++; }
-    if (authError) throw new Error("auth: " + (authError.code || authError.message));
-    if (!authReady) throw new Error("auth-timeout: Anmeldung dauert zu lange — ist Anonymous Auth aktiviert?");
+    // kurz auf anonyme Anmeldung warten (best effort) — aber NICHT blockieren:
+    // eure aktuellen Datenbank-Regeln erlauben Schreiben auch ohne Anmeldung.
+    let tries = 0; while (!authReady && !authError && tries < 10){ await new Promise(r => setTimeout(r,100)); tries++; }
     await withTimeout(push(ref(db, "rsvp"), entry), 8000);
     form.style.display = "none";
     $("thanks").classList.add("show");
     $("thanksMsg").textContent = attending === "ja"
       ? "Wunderbar — wir freuen uns riesig auf euch!"
       : "Schade, dass ihr nicht dabei sein könnt. Danke für die Rückmeldung.";
+    if (attending === "ja"){
+      const post = $("postRsvp");
+      post.hidden = false;
+      post.querySelectorAll(".reveal").forEach(el => el.classList.add("in"));
+      requestAnimationFrame(() => post.scrollIntoView({ behavior:"smooth", block:"start" }));
+    }
   }catch(err){
     console.error("RSVP-Fehler:", err);
     techDetail = (err && (err.code || err.message)) || String(err);
@@ -1004,21 +1047,127 @@ $("adminOpen").addEventListener("click", () => {
   if (!adminBound){ bindAdmin(); adminBound = true; }
 });
 $("adminClose").addEventListener("click", () => $("adminPanel").classList.remove("show"));
+let currentRsvpRows = [];
+let editingKey = null;
+
 function bindAdmin(){
   onValue(ref(db, "rsvp"), snap => {
     const rows = []; let zu = 0, ab = 0;
-    snap.forEach(c => { const v = c.val(); rows.push(v); if (v.attending==="ja") zu += (v.guests||1); else ab++; });
+    snap.forEach(c => {
+      const v = c.val();
+      rows.push({ key: c.key, ...v });
+      if (v.attending==="ja") zu += (v.guests||1); else ab++;
+    });
     rows.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    currentRsvpRows = rows;
     $("stZu").textContent = zu; $("stAb").textContent = ab; $("stTot").textContent = rows.length;
-    $("adminRows").innerHTML = rows.map(v => `
-      <tr><td>${esc(v.name)}</td>
-      <td class="${v.attending==='ja'?'yes':'no'}">${v.attending==='ja'?'Zusage':'Absage'}</td>
-      <td>${v.attending==='ja'?(v.guests||1):'–'}</td>
-      <td>${v.type==='party'?'Party':(v.type==='voll'?'Ganzer Tag':'–')}</td>
-      <td>${esc(v.diet)||'–'}</td><td>${esc(v.message)||'–'}</td></tr>`).join("")
-      || '<tr><td colspan="6" style="text-align:center;opacity:.6;">Noch keine Rückmeldungen.</td></tr>';
+    renderAdminRows();
   });
 }
+
+function renderAdminRows(){
+  const rows = currentRsvpRows;
+  $("adminRows").innerHTML = rows.map(v => {
+    if (v.key === editingKey) return adminRowEdit(v);
+    return `
+      <tr data-key="${v.key}">
+        <td>${esc(v.name)}</td>
+        <td class="${v.attending==='ja'?'yes':'no'}">${v.attending==='ja'?'Zusage':'Absage'}</td>
+        <td>${v.attending==='ja'?(v.guests||1):'–'}</td>
+        <td>${v.type==='party'?'Party':(v.type==='voll'?'Ganzer Tag':'–')}</td>
+        <td>${esc(v.diet)||'–'}</td>
+        <td>${esc(v.message)||'–'}</td>
+        <td class="row-actions">
+          <button type="button" class="edit">Bearbeiten</button>
+          <button type="button" class="del">Löschen</button>
+        </td>
+      </tr>`;
+  }).join("") || '<tr><td colspan="7" style="text-align:center;opacity:.6;">Noch keine Rückmeldungen.</td></tr>';
+}
+
+function adminRowEdit(v){
+  return `
+    <tr data-key="${v.key}">
+      <td><input type="text" class="eName" value="${esc(v.name)}"></td>
+      <td>
+        <select class="eAttending">
+          <option value="ja"${v.attending==='ja'?' selected':''}>Zusage</option>
+          <option value="nein"${v.attending==='nein'?' selected':''}>Absage</option>
+        </select>
+      </td>
+      <td><input type="number" class="eGuests" min="1" max="12" value="${v.guests||1}"></td>
+      <td>
+        <select class="eType">
+          <option value="voll"${v.type!=='party'?' selected':''}>Ganzer Tag</option>
+          <option value="party"${v.type==='party'?' selected':''}>Party</option>
+        </select>
+      </td>
+      <td><input type="text" class="eDiet" value="${esc(v.diet)}"></td>
+      <td><input type="text" class="eMessage" value="${esc(v.message)}"></td>
+      <td class="row-actions">
+        <button type="button" class="save">Speichern</button>
+        <button type="button" class="cancel">Abbrechen</button>
+      </td>
+    </tr>`;
+}
+
+$("adminRows").addEventListener("click", async e => {
+  const tr = e.target.closest("tr[data-key]");
+  if (!tr) return;
+  const key = tr.dataset.key;
+
+  if (e.target.classList.contains("edit")){
+    editingKey = key; renderAdminRows(); return;
+  }
+  if (e.target.classList.contains("cancel")){
+    editingKey = null; renderAdminRows(); return;
+  }
+  if (e.target.classList.contains("del")){
+    if (!confirm("Diese Rückmeldung wirklich unwiderruflich löschen?")) return;
+    try{ await remove(ref(db, "rsvp/" + key)); }
+    catch(err){ alert("Löschen fehlgeschlagen: " + (err.code || err.message)); }
+    return;
+  }
+  if (e.target.classList.contains("save")){
+    const updated = {
+      name:      tr.querySelector(".eName").value.trim(),
+      attending: tr.querySelector(".eAttending").value,
+      guests:    parseInt(tr.querySelector(".eGuests").value, 10) || 1,
+      type:      tr.querySelector(".eType").value,
+      diet:      tr.querySelector(".eDiet").value.trim(),
+      message:   tr.querySelector(".eMessage").value.trim(),
+    };
+    try{
+      await update(ref(db, "rsvp/" + key), updated);
+      editingKey = null;
+    }catch(err){ alert("Speichern fehlgeschlagen: " + (err.code || err.message)); }
+    return;
+  }
+});
+
+/* Excel-Export der Rückmeldungen — nur im passwortgeschützten Bereich verfügbar */
+$("exportExcel").addEventListener("click", () => {
+  if (typeof XLSX === "undefined"){
+    alert("Excel-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.");
+    return;
+  }
+  const data = currentRsvpRows.map(v => ({
+    Name: v.name || "",
+    Antwort: v.attending === "ja" ? "Zusage" : "Absage",
+    Personen: v.attending === "ja" ? (v.guests || 1) : 0,
+    Typ: v.type === "party" ? "Party" : (v.type === "voll" ? "Ganzer Tag" : ""),
+    "Essenswünsche": v.diet || "",
+    Nachricht: v.message || "",
+    "Eintrag (Stammdaten)": v.guestLabel || "",
+    Zeitpunkt: v.createdAt ? new Date(v.createdAt).toLocaleString("de-DE") : "",
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws["!cols"] = [{wch:22},{wch:10},{wch:9},{wch:11},{wch:24},{wch:30},{wch:20},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rückmeldungen");
+  XLSX.writeFile(wb, `Rueckmeldungen-${CONFIG.braut}-${CONFIG.braeutigam}.xlsx`);
+});
+
 function esc(s){ return (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
 /* ═══════════════════════ INHALTE BEARBEITEN (passwortgeschützt) ═══════════════════════ */
@@ -1067,7 +1216,9 @@ function populateEditor(){
   $("eEventEndeUhrzeit").value  = CONFIG.eventEndeUhrzeit || "";
 
   $("eTextVoll").value  = CONFIG.textVoll  || "";
+  $("eTextVollSingular").value  = CONFIG.textVollSingular  || "";
   $("eTextParty").value = CONFIG.textParty || "";
+  $("eTextPartySingular").value = CONFIG.textPartySingular || "";
 
   $("eAblaufVoll").value  = ablaufToLines(CONFIG.ablaufVoll);
   $("eAblaufParty").value = ablaufToLines(CONFIG.ablaufParty);
@@ -1117,7 +1268,9 @@ $("saveConfig").addEventListener("click", async () => {
     partyStartUhrzeit: $("ePartyStartUhrzeit").value.trim(),
     eventEndeUhrzeit:  $("eEventEndeUhrzeit").value.trim(),
     textVoll:     $("eTextVoll").value.trim(),
+    textVollSingular:  $("eTextVollSingular").value.trim(),
     textParty:    $("eTextParty").value.trim(),
+    textPartySingular: $("eTextPartySingular").value.trim(),
     ablaufVoll:   linesToAblauf($("eAblaufVoll").value),
     ablaufParty:  linesToAblauf($("eAblaufParty").value),
     rsvpEmail:    CONFIG.rsvpEmail || "",
@@ -1137,8 +1290,8 @@ $("saveConfig").addEventListener("click", async () => {
   });
 
   try{
-    let tries = 0; while (!authReady && !authError && tries < 30){ await new Promise(r => setTimeout(r,100)); tries++; }
-    if (authError || !authReady) throw new Error("Firebase-Anmeldung nicht bereit — bitte Setup prüfen.");
+    // best effort — nicht blockierend, da eure Regeln auch ohne Anmeldung schreiben lassen
+    let tries = 0; while (!authReady && !authError && tries < 10){ await new Promise(r => setTimeout(r,100)); tries++; }
     await Promise.all([
       set(ref(db, "siteConfig"), newConfig),
       set(ref(db, "guests"), guestsObj),
