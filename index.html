@@ -6,6 +6,26 @@
 <title>Wir heiraten · Chantal & Pascal</title>
 <meta name="description" content="Save the Date — Chantal & Pascal, 29. Mai 2027" />
 
+<!-- Damit Link-Vorschauen (WhatsApp, iMessage, SMS, Social Media) einen schönen
+     Titel statt der nackten github.io-URL zeigen. og:image lässt sich nicht mit
+     einem eingebetteten Bild befüllen (Crawler brauchen eine echte Bild-URL) —
+     dafür separat gehostetes Foto verlinken, siehe Hinweis im Chat. -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Wir heiraten · Chantal & Pascal" />
+<meta property="og:description" content="Save the Date — 29. Mai 2027. Findet euren Namen und alle Details zu unserer Hochzeit." />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Wir heiraten · Chantal & Pascal" />
+<meta name="twitter:description" content="Save the Date — 29. Mai 2027." />
+
+<!-- Titel beim "Zum Home-Bildschirm hinzufügen" (iOS) -->
+<meta name="apple-mobile-web-app-title" content="Chantal & Pascal" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#F5F1E8" />
+
+<!-- Kleines Monogramm-Favicon (C&P), passend zum Siegel-Design -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23F5F1E8' stroke='%237E8C6A' stroke-width='3'/%3E%3Ctext x='50' y='63' font-family='Georgia,serif' font-size='38' text-anchor='middle' fill='%232B3226'%3EC%26P%3C/text%3E%3C/svg%3E" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Jost:wght@300;400;500&family=Pinyon+Script&display=swap" rel="stylesheet" />
@@ -720,7 +740,12 @@ function sealSVG(sfx){
 function renderConfigTexts(){
   $("heroCrest").innerHTML = sealSVG("H");
   $("footCrest").innerHTML = sealSVG("F");
-  document.title = `Wir heiraten · ${CONFIG.braut} & ${CONFIG.braeutigam}`;
+  const titleText = `Wir heiraten · ${CONFIG.braut} & ${CONFIG.braeutigam}`;
+  document.title = titleText;
+  const setMeta = (selector, value) => { const el = document.querySelector(selector); if (el) el.setAttribute("content", value); };
+  setMeta('meta[property="og:title"]', titleText);
+  setMeta('meta[name="twitter:title"]', titleText);
+  setMeta('meta[name="apple-mobile-web-app-title"]', `${CONFIG.braut} & ${CONFIG.braeutigam}`);
   $("heroNameA").textContent = CONFIG.braut;
   $("heroNameB").textContent = CONFIG.braeutigam;
   $("heroDate").textContent  = CONFIG.datumText;
