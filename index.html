@@ -113,6 +113,19 @@ body::before{
 .card .maplink{ display:inline-block; margin-top:16px; font-family:var(--sans); font-weight:400; letter-spacing:.16em; text-transform:uppercase; font-size:12px; color:var(--brass); text-decoration:none; border-bottom:1px solid var(--brass); padding-bottom:2px; transition:color .3s, border-color .3s; }
 .card .maplink:hover{ color:var(--sage-deep); border-color:var(--sage-deep); }
 
+/* Kalender-Buttons */
+.cal-buttons{ display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin-top:38px; }
+.cal-btn{
+  display:inline-flex; align-items:center; gap:9px; text-decoration:none;
+  padding:14px 26px; font-family:var(--sans); font-weight:400; letter-spacing:.14em; text-transform:uppercase; font-size:12px;
+  background:var(--ink); color:var(--paper); border:1px solid var(--ink); transition:background .3s,color .3s,border-color .3s;
+}
+.cal-btn:hover{ background:var(--sage-deep); border-color:var(--sage-deep); }
+.cal-btn--outline{ background:transparent; color:var(--ink); border-color:var(--sage); }
+.cal-btn--outline:hover{ background:var(--sage); color:var(--paper); }
+.cal-ico{ font-size:15px; }
+@media (max-width:480px){ .cal-buttons{ flex-direction:column; align-items:stretch; } .cal-btn{ justify-content:center; } }
+
 /* Ring-Akzent */
 .accent{ display:flex; align-items:center; gap:clamp(24px,5vw,56px); margin-top:56px; text-align:left; flex-wrap:wrap; justify-content:center; }
 .accent.rev{ flex-direction:row-reverse; }
@@ -194,6 +207,27 @@ body::before{
 .admin th{ font-family:var(--sans); font-weight:400; letter-spacing:.14em; text-transform:uppercase; font-size:11px; color:var(--blush); }
 .admin .close{ position:absolute; top:20px; right:24px; background:none; border:1px solid var(--paper); color:var(--paper); padding:8px 14px; cursor:pointer; letter-spacing:.2em; font-size:11px; text-transform:uppercase; }
 .admin .yes{ color:#c9dcae; } .admin .no{ color:#e0b0a0; }
+
+/* Editor (Inhalte bearbeiten) */
+.editor-hint{ font-size:13px; color:var(--blush); margin:-6px 0 22px; line-height:1.6; }
+.editor-hint code{ background:rgba(245,241,232,.15); padding:1px 6px; border-radius:2px; }
+.editor-section{ margin-bottom:36px; padding-bottom:30px; border-bottom:1px solid rgba(245,241,232,.15); }
+.editor-section:last-of-type{ border-bottom:none; }
+.editor-section h3{ font-family:var(--serif); font-weight:500; font-size:22px; color:var(--paper); margin-bottom:16px; }
+.editor-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+.editor-grid .field{ grid-column:span 1; }
+.admin .field > label{ color:var(--blush); }
+.admin .field input,.admin .field textarea,.admin .field select{
+  background:rgba(245,241,232,.06); border:1px solid rgba(245,241,232,.28); color:var(--paper);
+  width:100%; padding:11px 13px; font-family:var(--sans); font-size:15px;
+}
+.admin .field input:focus,.admin .field textarea:focus,.admin .field select:focus{ outline:none; border-color:var(--blush); }
+.admin .field textarea{ font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.7; min-height:100px; }
+.guest-row{ display:grid; grid-template-columns:1.4fr .7fr .9fr 1.6fr auto; gap:10px; align-items:end; margin-bottom:14px; padding-bottom:14px; border-bottom:1px dashed rgba(245,241,232,.15); }
+.guest-row .field{ margin-bottom:0; }
+.guest-row .del{ background:none; border:1px solid rgba(224,176,160,.6); color:#e0b0a0; padding:11px 12px; cursor:pointer; font-size:12px; letter-spacing:.1em; }
+.guest-row .del:hover{ background:rgba(224,176,160,.15); }
+@media (max-width:680px){ .editor-grid{ grid-template-columns:1fr; } .guest-row{ grid-template-columns:1fr; } }
 
 /* ═══════════════════════ RESPONSIVE / MOTION ═══════════════════════ */
 @media (max-width:560px){
@@ -310,6 +344,14 @@ body::before{
     <div class="wrap reveal">
       <div class="section-label">Der Tag</div>
       <div class="cards" id="cards"></div>
+      <div class="cal-buttons" id="calButtons">
+        <a id="gcalBtn" class="cal-btn" target="_blank" rel="noopener">
+          <span class="cal-ico">📅</span> Zu Google Kalender
+        </a>
+        <a id="icsBtn" class="cal-btn cal-btn--outline" download="Hochzeit.ics">
+          <span class="cal-ico">🍎</span> Zu Apple / Outlook Kalender
+        </a>
+      </div>
     </div>
   </section>
 
@@ -325,8 +367,8 @@ body::before{
 <section class="section rsvp" id="rsvp">
   <div class="wrap reveal">
     <div class="rule rule--up"></div>
-    <p class="eyebrow" style="margin-top:26px;">Sagt uns Bescheid</p>
-    <p class="lead">Bitte gebt uns bis zum <span id="rsvpDeadline">01. März 2027</span> Rückmeldung.</p>
+    <p class="eyebrow" style="margin-top:26px;">Nur noch ein paar Details</p>
+    <p class="lead">Wir freuen uns, dass ihr dabei seid — tragt hier einfach die letzten Infos für die Planung ein.</p>
 
     <form class="form" id="rsvpForm" autocomplete="off" novalidate>
       <div class="field">
@@ -382,14 +424,16 @@ body::before{
   <div class="closing">Wir freuen uns auf euch.</div>
   <div class="tag" id="hashtag">#ChantalUndPascal2027</div>
   <br>
-  <button class="admin-link" id="adminOpen">Gäste-Übersicht</button>
+  <button class="admin-link" id="editOpen">Inhalte bearbeiten</button>
+  &nbsp;·&nbsp;
+  <button class="admin-link" id="adminOpen">Rückmeldungen</button>
 </footer>
 
-<!-- Admin -->
+<!-- Admin: Rückmeldungen -->
 <div class="admin" id="adminPanel">
   <button class="close" id="adminClose">Schließen</button>
   <div class="panel">
-    <h2>Gäste-Übersicht</h2>
+    <h2>Rückmeldungen</h2>
     <div class="stats">
       <div class="stat"><b id="stZu">0</b><span>Zusagen (Personen)</span></div>
       <div class="stat"><b id="stAb">0</b><span>Absagen</span></div>
@@ -402,9 +446,67 @@ body::before{
   </div>
 </div>
 
+<!-- Admin: Inhalte bearbeiten -->
+<div class="admin" id="editPanel">
+  <button class="close" id="editClose">Schließen</button>
+  <div class="panel">
+    <h2>Inhalte bearbeiten</h2>
+    <p class="editor-hint">Änderungen werden in eurer Firebase-Datenbank gespeichert und sind danach für alle Gäste sichtbar. Das Passwort schützt nur diesen Bearbeiten-Dialog, nicht die Datenbank selbst.</p>
+
+    <div class="editor-section">
+      <h3>Grunddaten</h3>
+      <div class="editor-grid">
+        <div class="field"><label>Braut</label><input type="text" id="eBraut"></div>
+        <div class="field"><label>Bräutigam</label><input type="text" id="eBraeutigam"></div>
+        <div class="field"><label>Datum &amp; Uhrzeit (Countdown)</label><input type="datetime-local" id="eDatumISO"></div>
+        <div class="field"><label>Datum-Anzeige (Hero)</label><input type="text" id="eDatumText" placeholder="29 · Mai · 2027"></div>
+        <div class="field"><label>Hashtag</label><input type="text" id="eHashtag"></div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h3>Trauung &amp; Feier</h3>
+      <div class="editor-grid">
+        <div class="field"><label>Trauung – Zeit-Text</label><input type="text" id="eTrauungWhen"></div>
+        <div class="field"><label>Trauung – Ort</label><input type="text" id="eTrauungName"></div>
+        <div class="field" style="grid-column:1/-1;"><label>Trauung – Adresse</label><input type="text" id="eTrauungAddr"></div>
+        <div class="field"><label>Feier – Zeit-Text</label><input type="text" id="eFeierWhen"></div>
+        <div class="field"><label>Feier – Ort</label><input type="text" id="eFeierName"></div>
+        <div class="field" style="grid-column:1/-1;"><label>Feier – Adresse</label><input type="text" id="eFeierAddr"></div>
+        <div class="field"><label>Party – Zeit-Text</label><input type="text" id="ePartyWhen"></div>
+        <div class="field"><label>Party – Start (Kalender, HH:MM)</label><input type="text" id="ePartyStartUhrzeit" placeholder="20:30"></div>
+        <div class="field"><label>Ende (Kalender, HH:MM)</label><input type="text" id="eEventEndeUhrzeit" placeholder="23:30"></div>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <h3>Begleittexte</h3>
+      <div class="field"><label>Text für Ganztags-Gäste</label><textarea id="eTextVoll"></textarea></div>
+      <div class="field"><label>Text für Party-Gäste</label><textarea id="eTextParty"></textarea></div>
+    </div>
+
+    <div class="editor-section">
+      <h3>Ablauf</h3>
+      <p class="editor-hint">Eine Zeile je Programmpunkt, Format: <code>Uhrzeit | Text</code></p>
+      <div class="field"><label>Ablauf – ganzer Tag</label><textarea id="eAblaufVoll" rows="7" placeholder="14:00 | Trauung"></textarea></div>
+      <div class="field"><label>Ablauf – nur Party</label><textarea id="eAblaufParty" rows="5" placeholder="20:30 | Ankunft"></textarea></div>
+    </div>
+
+    <div class="editor-section">
+      <h3>Gästeliste</h3>
+      <p class="editor-hint">Diese Liste bestimmt, wen Gäste bei der Suche finden und welche Einladung (ganzer Tag / nur Party) sie sehen.</p>
+      <div id="guestRows"></div>
+      <button type="button" class="btn" id="addGuestRow" style="background:var(--sage-deep);">+ Gast hinzufügen</button>
+    </div>
+
+    <button type="button" class="btn" id="saveConfig">Alles speichern</button>
+    <div class="form-note" id="editNote"></div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, push, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -418,7 +520,6 @@ const CONFIG = {
   datumISO:     "2027-05-29T14:00",     // JJJJ-MM-TTThh:mm
   datumText:    "29 · Mai · 2027",
 
-  rsvpDeadline: "01. März 2027",
   hashtag:      "#ChantalUndPascal2027",
 
   // Trauung  ← bitte Ort ergänzen
@@ -431,6 +532,11 @@ const CONFIG = {
   feierAddr:    "Alter Markt 2, 59821 Arnsberg",
   // Party (nur-Party-Gäste)
   partyWhen:    "ab 20:30 Uhr",
+
+  // Präzise Uhrzeiten NUR für die Kalender-Buttons (Google/Apple).
+  // Format HH:MM, 24h. Datum wird automatisch aus datumISO übernommen.
+  partyStartUhrzeit: "20:30",   // Kalender-Start für Nur-Party-Gäste
+  eventEndeUhrzeit:  "23:30",   // Kalender-Ende für beide Gästetypen (ggf. "23:59" bei Feiern über Mitternacht)
 
   // Ablauf für GANZTAGS-Gäste
   ablaufVoll: [
@@ -458,12 +564,70 @@ const CONFIG = {
        persons : voreingestellte Personenzahl
        type    : "voll"  = ganzer Tag  |  "party" = nur Party
        members : (optional) Namen, die im Formular vorausgefüllt werden
-     Neue Gäste einfach als weitere Zeile ergänzen. */
+     Neue Gäste einfach als weitere Zeile ergänzen, oder direkt über
+     "Inhalte bearbeiten" auf der Seite pflegen.
+
+     WICHTIG: Aus eurer Liste ging noch nicht hervor, wer nur zur Party
+     kommt. Daher stehen unten erstmal ALLE auf "voll" (ganzer Tag).
+     Bitte über "Inhalte bearbeiten" → Gästeliste bei den Nur-Party-Gästen
+     den Typ auf "Nur Party" umstellen. */
   guests: [
-    { label:"Familie Müller",  persons:3, type:"voll",  members:["Anna Müller","Ben Müller","Clara Müller"] },
-    { label:"Familie Schmidt", persons:2, type:"party", members:["Tim Schmidt","Lea Schmidt"] },
-    { label:"Oma Erna",        persons:1, type:"voll",  members:["Erna Grisail"] },
-    // … hier weitere Gäste ergänzen
+    { label:"Ani & Giu", persons:2, type:"voll", members:["Ani", "Giu"] },
+    { label:"Maddy & Chris", persons:2, type:"voll", members:["Maddy", "Chris"] },
+    { label:"Mama & Markus", persons:2, type:"voll", members:["Mama", "Markus"] },
+    { label:"Mo", persons:1, type:"voll", members:["Mo"] },
+    { label:"Yves und Tobi", persons:2, type:"voll", members:["Yves", "Tobi"] },
+    { label:"Susi & Gio", persons:2, type:"voll", members:["Susi", "Gio"] },
+    { label:"Oma & Opa", persons:2, type:"voll", members:["Oma", "Opa"] },
+    { label:"Jochen & Ela", persons:2, type:"voll", members:["Jochen", "Ela"] },
+    { label:"Andrea & Klaus", persons:2, type:"voll", members:["Andrea", "Klaus"] },
+    { label:"Biena", persons:1, type:"voll", members:["Biena"] },
+    { label:"Louis & Mareen", persons:2, type:"voll", members:["Louis", "Mareen"] },
+    { label:"Paulina & David", persons:2, type:"voll", members:["Paulina", "David"] },
+    { label:"Metti & Selina", persons:2, type:"voll", members:["Metti", "Selina"] },
+    { label:"Benny", persons:1, type:"voll", members:["Benny"] },
+    { label:"Robbe & Sandra", persons:2, type:"voll", members:["Robbe", "Sandra"] },
+    { label:"Kevin", persons:1, type:"voll", members:["Kevin"] },
+    { label:"Johanna", persons:1, type:"voll", members:["Johanna"] },
+    { label:"Koso", persons:1, type:"voll", members:["Koso"] },
+    { label:"Jenny + Julian", persons:2, type:"voll", members:["Jenny", "Julian"] },
+    { label:"Christina & Valera", persons:2, type:"voll", members:["Christina", "Valera"] },
+    { label:"Zilli", persons:1, type:"voll", members:["Zilli"] },
+    { label:"Milli", persons:1, type:"voll", members:["Milli"] },
+    { label:"Shara", persons:1, type:"voll", members:["Shara"] },
+    { label:"Seli", persons:1, type:"voll", members:["Seli"] },
+    { label:"Chef & Silke", persons:2, type:"voll", members:["Chef", "Silke"] },
+    { label:"Marita", persons:1, type:"voll", members:["Marita"] },
+    { label:"Siggi", persons:1, type:"voll", members:["Siggi"] },
+    { label:"Frank & Silke", persons:2, type:"voll", members:["Frank", "Silke"] },
+    { label:"Nick", persons:1, type:"voll", members:["Nick"] },
+    { label:"Paul", persons:1, type:"voll", members:["Paul"] },
+    { label:"Moritz & Nina", persons:2, type:"voll", members:["Moritz", "Nina"] },
+    { label:"Lisa & Dietrich", persons:2, type:"voll", members:["Lisa", "Dietrich"] },
+    { label:"Delia & Matthias & Levia", persons:3, type:"voll", members:["Delia", "Matthias", "Levia"] },
+    { label:"Jenny", persons:1, type:"voll", members:["Jenny"] },
+    { label:"Verena & Marko & Sophie", persons:3, type:"voll", members:["Verena", "Marko", "Sophie"] },
+    { label:"Silvia & Siggi", persons:2, type:"voll", members:["Silvia", "Siggi"] },
+    { label:"Dirk & Itti", persons:2, type:"voll", members:["Dirk", "Itti"] },
+    { label:"André & Susi", persons:2, type:"voll", members:["André", "Susi"] },
+    { label:"Suse & Frank", persons:2, type:"voll", members:["Suse", "Frank"] },
+    { label:"Karsten & Doro", persons:2, type:"voll", members:["Karsten", "Doro"] },
+    { label:"Marko & Christina", persons:2, type:"voll", members:["Marko", "Christina"] },
+    { label:"Nico & Jenny", persons:2, type:"voll", members:["Nico", "Jenny"] },
+    { label:"Matthias Strozik & Partner", persons:2, type:"voll", members:["Matthias Strozik"] },
+    { label:"Tante Brigitte", persons:1, type:"voll", members:["Tante Brigitte"] },
+    { label:"Marvin & Sonja", persons:2, type:"voll", members:["Marvin", "Sonja"] },
+    { label:"Jessy & Eugen", persons:2, type:"voll", members:["Jessy", "Eugen"] },
+    { label:"Erik & Angelina", persons:2, type:"voll", members:["Erik", "Angelina"] },
+    { label:"Rene & Elisa", persons:2, type:"voll", members:["Rene", "Elisa"] },
+    { label:"Manu & Thomas", persons:2, type:"voll", members:["Manu", "Thomas"] },
+    { label:"Klaus & Sandra", persons:2, type:"voll", members:["Klaus", "Sandra"] },
+    { label:"Alena & Partner", persons:2, type:"voll", members:["Alena"] },
+    { label:"Nici & Partner", persons:2, type:"voll", members:["Nici"] },
+    { label:"Maxi B.", persons:1, type:"voll", members:["Maxi B."] },
+    { label:"Maxi T.", persons:1, type:"voll", members:["Maxi T."] },
+    { label:"Kai", persons:1, type:"voll", members:["Kai"] },
+    { label:"Felix", persons:1, type:"voll", members:["Felix"] },
   ],
 
   // Optional: E-Mail-Fallback, falls das Online-Speichern scheitert
@@ -487,15 +651,15 @@ const app  = initializeApp(firebaseConfig);
 const db   = getDatabase(app);
 const auth = getAuth(app);
 let authReady = false;
-signInAnonymously(auth).then(() => { authReady = true; }).catch(err => console.error("Auth-Fehler:", err));
+let authError = null;
+signInAnonymously(auth).then(() => { authReady = true; }).catch(err => { authError = err; console.error("Firebase Auth-Fehler:", err.code, err.message); });
 
 /* ═══════════════════════ TEXTE / WAPPEN EINSETZEN ═══════════════════════ */
 const $ = id => document.getElementById(id);
-const [iA, iB] = CONFIG.initialen.split("&").map(s => s.trim());
-const initA = iA || CONFIG.braut[0], initB = iB || CONFIG.braeutigam[0];
 
-// Monogramm-Siegel (eindeutige IDs pro Instanz wegen textPath)
 function sealSVG(sfx){
+  const [iA, iB] = CONFIG.initialen.split("&").map(s => s.trim());
+  const initA = iA || CONFIG.braut[0], initB = iB || CONFIG.braeutigam[0];
   const dt = (CONFIG.datumText || "").toUpperCase();
   return `<svg class="crest" viewBox="0 0 220 220" role="img" aria-label="Monogramm ${initA} und ${initB}">
     <defs>
@@ -510,15 +674,35 @@ function sealSVG(sfx){
     <path class="swash" d="M84 136 q26 11 52 0"/>
   </svg>`;
 }
-$("heroCrest").innerHTML = sealSVG("H");
-$("footCrest").innerHTML = sealSVG("F");
 
-document.title = `Wir heiraten · ${CONFIG.braut} & ${CONFIG.braeutigam}`;
-$("heroNameA").textContent = CONFIG.braut;
-$("heroNameB").textContent = CONFIG.braeutigam;
-$("heroDate").textContent  = CONFIG.datumText;
-$("hashtag").textContent = CONFIG.hashtag;
-$("rsvpDeadline").textContent = CONFIG.rsvpDeadline;
+// alles, was direkt aus CONFIG gespeist wird — erneut aufrufbar nach Live-Edits
+function renderConfigTexts(){
+  $("heroCrest").innerHTML = sealSVG("H");
+  $("footCrest").innerHTML = sealSVG("F");
+  document.title = `Wir heiraten · ${CONFIG.braut} & ${CONFIG.braeutigam}`;
+  $("heroNameA").textContent = CONFIG.braut;
+  $("heroNameB").textContent = CONFIG.braeutigam;
+  $("heroDate").textContent  = CONFIG.datumText;
+  $("hashtag").textContent = CONFIG.hashtag;
+}
+renderConfigTexts();
+
+/* ═══════════════════════ LIVE-KONFIGURATION AUS FIREBASE ═══════════════════════
+   Fällt zurück auf die CONFIG-Werte oben, solange noch nichts gespeichert wurde. */
+onValue(ref(db, "siteConfig"), snap => {
+  const v = snap.val();
+  if (v && typeof v === "object"){
+    Object.assign(CONFIG, v);
+    renderConfigTexts();
+    if (selectedGuest) buildInvite(selectedGuest); // offene Einladung live aktualisieren
+  }
+});
+onValue(ref(db, "guests"), snap => {
+  const v = snap.val();
+  if (v && typeof v === "object"){
+    CONFIG.guests = Object.keys(v).map(k => ({ id:k, ...v[k] }));
+  }
+});
 
 /* ═══════════════════════ GÄSTE-AUSWAHL (Stammdaten) ═══════════════════════ */
 const guestSearch = $("guestSearch"), guestListEl = $("guestList"), guestNone = $("guestNone");
@@ -530,12 +714,16 @@ const mapURL = (name, addr) =>
 
 function renderGuestList(term){
   const q = term.trim().toLowerCase();
-  const matches = !q ? CONFIG.guests
-    : CONFIG.guests.filter(g => g.label.toLowerCase().includes(q)
+  if (q.length < 2){
+    guestListEl.classList.remove("show"); guestListEl.innerHTML = "";
+    guestNone.classList.remove("show");
+    return;
+  }
+  const matches = CONFIG.guests.filter(g => g.label.toLowerCase().includes(q)
         || (g.members||[]).some(m => m.toLowerCase().includes(q)));
   if (!matches.length){
     guestListEl.classList.remove("show"); guestListEl.innerHTML = "";
-    guestNone.classList.toggle("show", !!q);
+    guestNone.classList.add("show");
     return;
   }
   guestNone.classList.remove("show");
@@ -546,7 +734,6 @@ function renderGuestList(term){
   }).join("");
   guestListEl.classList.add("show");
 }
-guestSearch.addEventListener("focus", () => renderGuestList(guestSearch.value));
 guestSearch.addEventListener("input", () => renderGuestList(guestSearch.value));
 guestListEl.addEventListener("click", e => {
   const li = e.target.closest("li[data-i]"); if (!li) return;
@@ -596,12 +783,73 @@ function buildInvite(g){
   const list = party ? CONFIG.ablaufParty : CONFIG.ablaufVoll;
   $("timeline").innerHTML = list.map(a =>
     `<div class="tl-item"><div class="tl-time">${esc(a.zeit)}</div><div class="tl-desc">${esc(a.text)}</div></div>`).join("");
+
+  buildCalendarLinks(g, party);
 }
 
 function card(title, when, placeHTML, href){
   return `<div class="card"><h3>${esc(title)}</h3><div class="when">${esc(when)}</div>`
        + `<p>${placeHTML}</p>`
        + `<a class="maplink" href="${href}" target="_blank" rel="noopener">Route ansehen</a></div>`;
+}
+
+/* ═══════════════════════ KALENDER-BUTTONS (individuell je Gästetyp) ═══════════════════════ */
+// Nimmt an, dass die Hochzeit in der mitteleuropäischen Sommerzeit (CEST, UTC+2) stattfindet.
+function localDate(datePart, hhmm){
+  return new Date(`${datePart}T${(hhmm||"00:00")}:00+02:00`);
+}
+function toGCalStamp(d){ return d.toISOString().replace(/[-:]/g,"").split(".")[0] + "Z"; }
+function toICSStamp(d){ return toGCalStamp(d); }
+
+function buildCalendarLinks(g, party){
+  const datePart = (CONFIG.datumISO || "").slice(0,10); // JJJJ-MM-TT
+  const startTime = party ? (CONFIG.partyStartUhrzeit || "20:00") : (CONFIG.datumISO || "").slice(11,16);
+  const endTime = CONFIG.eventEndeUhrzeit || "23:30";
+
+  const start = localDate(datePart, startTime);
+  const end   = localDate(datePart, endTime);
+
+  const title = party
+    ? `Hochzeitsparty ${CONFIG.braut} & ${CONFIG.braeutigam}`
+    : `Hochzeit ${CONFIG.braut} & ${CONFIG.braeutigam}`;
+  const location = party
+    ? `${CONFIG.feierName}, ${CONFIG.feierAddr}`
+    : `${CONFIG.feierName}, ${CONFIG.feierAddr}`;
+  const details = party
+    ? CONFIG.textParty
+    : `${CONFIG.textVoll}\nTrauung: ${CONFIG.trauungName}${CONFIG.trauungAddr ? ", "+CONFIG.trauungAddr : ""}`;
+
+  // Google Kalender
+  const gcalParams = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    dates: `${toGCalStamp(start)}/${toGCalStamp(end)}`,
+    details: details,
+    location: location,
+    ctz: "Europe/Berlin",
+  });
+  $("gcalBtn").href = "https://www.google.com/calendar/render?" + gcalParams.toString();
+
+  // ICS-Datei (Apple Kalender, Outlook, …)
+  const ics = [
+    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Hochzeit//DE","CALSCALE:GREGORIAN","METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${Date.now()}@hochzeit`,
+    `DTSTAMP:${toICSStamp(new Date())}`,
+    `DTSTART:${toICSStamp(start)}`,
+    `DTEND:${toICSStamp(end)}`,
+    `SUMMARY:${title.replace(/,/g,"\\,")}`,
+    `LOCATION:${location.replace(/,/g,"\\,")}`,
+    `DESCRIPTION:${details.replace(/\n/g,"\\n").replace(/,/g,"\\,")}`,
+    "END:VEVENT","END:VCALENDAR",
+  ].join("\r\n");
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const icsBtn = $("icsBtn");
+  if (icsBtn.dataset.blobUrl) URL.revokeObjectURL(icsBtn.dataset.blobUrl);
+  const url = URL.createObjectURL(blob);
+  icsBtn.href = url;
+  icsBtn.dataset.blobUrl = url;
+  icsBtn.download = `Hochzeit-${CONFIG.braut}-${CONFIG.braeutigam}${party ? "-Party" : ""}.ics`;
 }
 
 /* ═══════════════════════ BLÜTENBLÄTTER ═══════════════════════ */
@@ -707,8 +955,11 @@ form.addEventListener("submit", async e => {
     type:       selectedGuest ? selectedGuest.type  : "",
     createdAt: serverTimestamp(),
   };
+  let techDetail = "";
   try{
-    let tries = 0; while (!authReady && tries < 20){ await new Promise(r => setTimeout(r,100)); tries++; }
+    let tries = 0; while (!authReady && !authError && tries < 30){ await new Promise(r => setTimeout(r,100)); tries++; }
+    if (authError) throw new Error("auth: " + (authError.code || authError.message));
+    if (!authReady) throw new Error("auth-timeout: Anmeldung dauert zu lange — ist Anonymous Auth aktiviert?");
     await withTimeout(push(ref(db, "rsvp"), entry), 8000);
     form.style.display = "none";
     $("thanks").classList.add("show");
@@ -716,9 +967,13 @@ form.addEventListener("submit", async e => {
       ? "Wunderbar — wir freuen uns riesig auf euch!"
       : "Schade, dass ihr nicht dabei sein könnt. Danke für die Rückmeldung.";
   }catch(err){
-    console.error(err); note.classList.add("err");
-    note.textContent = "Online-Speichern hat nicht geklappt.";
+    console.error("RSVP-Fehler:", err);
+    techDetail = (err && (err.code || err.message)) || String(err);
+    note.classList.add("err");
+    note.innerHTML = "Online-Speichern hat nicht geklappt."
+      + `<br><small style="opacity:.75;">Technischer Hinweis: ${esc(techDetail)}</small>`;
     // E-Mail-Fallback anbieten, falls hinterlegt
+    let extra;
     if (CONFIG.rsvpEmail){
       const subj = `Rückmeldung Hochzeit – ${entry.name}`;
       const body =
@@ -730,10 +985,11 @@ form.addEventListener("submit", async e => {
       const fb = $("mailtoFallback");
       fb.href = `mailto:${CONFIG.rsvpEmail}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(body)}`;
       fb.style.display = "block";
-      note.textContent += " Ihr könnt sie stattdessen als E-Mail senden:";
+      extra = " Ihr könnt sie stattdessen als E-Mail senden:";
     } else {
-      note.textContent += " Bitte prüft die Verbindung und versucht es gleich noch einmal.";
+      extra = " Bitte prüft die Verbindung und versucht es gleich noch einmal.";
     }
+    note.innerHTML += extra;
     btn.disabled = false; btn.textContent = "Rückmeldung senden";
   }
 });
@@ -764,6 +1020,137 @@ function bindAdmin(){
   });
 }
 function esc(s){ return (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ═══════════════════════ INHALTE BEARBEITEN (passwortgeschützt) ═══════════════════════ */
+const editPanel = $("editPanel"), editNote = $("editNote"), guestRowsEl = $("guestRows");
+let editUnlocked = false;
+
+$("editOpen").addEventListener("click", () => {
+  if (!editUnlocked){
+    const pw = prompt("Passwort für den Bearbeiten-Modus:");
+    if (pw === null) return;
+    if (pw !== CONFIG.adminPassword){ alert("Falsches Passwort."); return; }
+    editUnlocked = true;
+  }
+  populateEditor();
+  editPanel.classList.add("show");
+});
+$("editClose").addEventListener("click", () => editPanel.classList.remove("show"));
+
+function isoFromConfig(){
+  // datetime-local braucht "JJJJ-MM-TTThh:mm" ohne Zeitzonen-Suffix
+  return (CONFIG.datumISO || "").slice(0,16);
+}
+function ablaufToLines(arr){ return (arr||[]).map(a => `${a.zeit} | ${a.text}`).join("\n"); }
+function linesToAblauf(text){
+  return text.split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const [zeit, ...rest] = l.split("|");
+    return { zeit: (zeit||"").trim(), text: rest.join("|").trim() };
+  }).filter(a => a.zeit || a.text);
+}
+
+function populateEditor(){
+  $("eBraut").value        = CONFIG.braut || "";
+  $("eBraeutigam").value   = CONFIG.braeutigam || "";
+  $("eDatumISO").value     = isoFromConfig();
+  $("eDatumText").value    = CONFIG.datumText || "";
+  $("eHashtag").value      = CONFIG.hashtag || "";
+
+  $("eTrauungWhen").value  = CONFIG.trauungWhen || "";
+  $("eTrauungName").value  = CONFIG.trauungName || "";
+  $("eTrauungAddr").value  = CONFIG.trauungAddr || "";
+  $("eFeierWhen").value    = CONFIG.feierWhen || "";
+  $("eFeierName").value    = CONFIG.feierName || "";
+  $("eFeierAddr").value    = CONFIG.feierAddr || "";
+  $("ePartyWhen").value    = CONFIG.partyWhen || "";
+  $("ePartyStartUhrzeit").value = CONFIG.partyStartUhrzeit || "";
+  $("eEventEndeUhrzeit").value  = CONFIG.eventEndeUhrzeit || "";
+
+  $("eTextVoll").value  = CONFIG.textVoll  || "";
+  $("eTextParty").value = CONFIG.textParty || "";
+
+  $("eAblaufVoll").value  = ablaufToLines(CONFIG.ablaufVoll);
+  $("eAblaufParty").value = ablaufToLines(CONFIG.ablaufParty);
+
+  guestRowsEl.innerHTML = "";
+  (CONFIG.guests || []).forEach(g => addGuestRow(g));
+}
+
+function addGuestRow(g){
+  g = g || { label:"", persons:1, type:"voll", members:[] };
+  const row = document.createElement("div");
+  row.className = "guest-row";
+  row.innerHTML = `
+    <div class="field"><label>Name / Familie</label><input type="text" class="gLabel" value="${esc(g.label)}" placeholder="Familie Muster"></div>
+    <div class="field"><label>Personen</label><input type="number" class="gPersons" min="1" max="12" value="${g.persons||1}"></div>
+    <div class="field"><label>Einladung</label>
+      <select class="gType">
+        <option value="voll"${g.type!=='party'?' selected':''}>Ganzer Tag</option>
+        <option value="party"${g.type==='party'?' selected':''}>Nur Party</option>
+      </select>
+    </div>
+    <div class="field"><label>Namen (Komma-getrennt)</label><input type="text" class="gMembers" value="${esc((g.members||[]).join(', '))}" placeholder="Anna Muster, Ben Muster"></div>
+    <button type="button" class="del">Entfernen</button>`;
+  row.querySelector(".del").addEventListener("click", () => row.remove());
+  guestRowsEl.appendChild(row);
+}
+$("addGuestRow").addEventListener("click", () => addGuestRow());
+
+$("saveConfig").addEventListener("click", async () => {
+  editNote.className = "form-note"; editNote.textContent = "Wird gespeichert …";
+  const isoVal = $("eDatumISO").value; // "JJJJ-MM-TTThh:mm"
+
+  const newConfig = {
+    braut:        $("eBraut").value.trim(),
+    braeutigam:   $("eBraeutigam").value.trim(),
+    initialen:    CONFIG.initialen,
+    datumISO:     isoVal || CONFIG.datumISO,
+    datumText:    $("eDatumText").value.trim(),
+    hashtag:      $("eHashtag").value.trim(),
+    trauungWhen:  $("eTrauungWhen").value.trim(),
+    trauungName:  $("eTrauungName").value.trim(),
+    trauungAddr:  $("eTrauungAddr").value.trim(),
+    feierWhen:    $("eFeierWhen").value.trim(),
+    feierName:    $("eFeierName").value.trim(),
+    feierAddr:    $("eFeierAddr").value.trim(),
+    partyWhen:    $("ePartyWhen").value.trim(),
+    partyStartUhrzeit: $("ePartyStartUhrzeit").value.trim(),
+    eventEndeUhrzeit:  $("eEventEndeUhrzeit").value.trim(),
+    textVoll:     $("eTextVoll").value.trim(),
+    textParty:    $("eTextParty").value.trim(),
+    ablaufVoll:   linesToAblauf($("eAblaufVoll").value),
+    ablaufParty:  linesToAblauf($("eAblaufParty").value),
+    rsvpEmail:    CONFIG.rsvpEmail || "",
+  };
+
+  const guestsObj = {};
+  [...guestRowsEl.querySelectorAll(".guest-row")].forEach((row, i) => {
+    const label = row.querySelector(".gLabel").value.trim();
+    if (!label) return;
+    const members = row.querySelector(".gMembers").value.split(",").map(s => s.trim()).filter(Boolean);
+    guestsObj["g" + i] = {
+      label,
+      persons: parseInt(row.querySelector(".gPersons").value, 10) || 1,
+      type: row.querySelector(".gType").value,
+      members,
+    };
+  });
+
+  try{
+    let tries = 0; while (!authReady && !authError && tries < 30){ await new Promise(r => setTimeout(r,100)); tries++; }
+    if (authError || !authReady) throw new Error("Firebase-Anmeldung nicht bereit — bitte Setup prüfen.");
+    await Promise.all([
+      set(ref(db, "siteConfig"), newConfig),
+      set(ref(db, "guests"), guestsObj),
+    ]);
+    editNote.className = "form-note";
+    editNote.textContent = "Gespeichert — alle Gäste sehen ab sofort die neuen Inhalte.";
+  }catch(err){
+    console.error("Speichern-Fehler:", err);
+    editNote.className = "form-note err";
+    editNote.textContent = "Speichern fehlgeschlagen: " + (err.code || err.message || err);
+  }
+});
 </script>
 </body>
 </html>
